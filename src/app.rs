@@ -9,21 +9,14 @@ use cosmic::prelude::*;
 use cosmic::widget;
 use futures_util::SinkExt;
 
-/// The application model stores app-specific state used to describe its interface and
-/// drive its logic.
 #[derive(Default)]
 pub struct AppModel {
-    /// Application state which is managed by the COSMIC runtime.
     core: cosmic::Core,
-    /// The popup id.
     popup: Option<Id>,
-    /// Configuration data that persists between application runs.
     config: Config,
-    /// Example row toggler.
     example_row: bool,
 }
 
-/// Messages emitted by the application and its widgets.
 #[derive(Debug, Clone)]
 pub enum Message {
     TogglePopup,
@@ -33,18 +26,10 @@ pub enum Message {
     ToggleExampleRow(bool),
 }
 
-/// Create a COSMIC application from the app model
 impl cosmic::Application for AppModel {
-    /// The async executor that will be used to run your application's commands.
     type Executor = cosmic::executor::Default;
-
-    /// Data that your application receives to its init method.
     type Flags = ();
-
-    /// Messages which the application and its widgets will emit.
     type Message = Message;
-
-    /// Unique identifier in RDNN (reverse domain name notation) format.
     const APP_ID: &'static str = "dev.cappsy.CosmicExtAppletDrives";
 
     fn core(&self) -> &cosmic::Core {
@@ -55,12 +40,10 @@ impl cosmic::Application for AppModel {
         &mut self.core
     }
 
-    /// Initializes the application with any given flags and startup commands.
     fn init(
         core: cosmic::Core,
         _flags: Self::Flags,
     ) -> (Self, Task<cosmic::Action<Self::Message>>) {
-        // Construct the app model with the runtime's core.
         let app = AppModel {
             core,
             config: cosmic_config::Config::new(Self::APP_ID, Config::VERSION)
@@ -85,10 +68,6 @@ impl cosmic::Application for AppModel {
         Some(Message::PopupClosed(id))
     }
 
-    /// Describes the interface based on the current state of the application model.
-    ///
-    /// Application events will be processed through the view. Any messages emitted by
-    /// events received by widgets will be passed to the update method.
     fn view(&self) -> Element<'_, Self::Message> {
         self.core
             .applet
@@ -109,16 +88,10 @@ impl cosmic::Application for AppModel {
         self.core.applet.popup_container(content_list).into()
     }
 
-    /// Register subscriptions for this application.
-    ///
-    /// Subscriptions are long-running async tasks running in the background which
-    /// emit messages to the application through a channel. They are started at the
-    /// beginning of the application, and persist through its lifetime.
     fn subscription(&self) -> Subscription<Self::Message> {
         struct MySubscription;
 
         Subscription::batch(vec![
-            // Create a subscription which emits updates through a channel.
             Subscription::run_with_id(
                 std::any::TypeId::of::<MySubscription>(),
                 cosmic::iced::stream::channel(4, move |mut channel| async move {
@@ -127,7 +100,6 @@ impl cosmic::Application for AppModel {
                     futures_util::future::pending().await
                 }),
             ),
-            // Watch for application configuration changes.
             self.core()
                 .watch_config::<Config>(Self::APP_ID)
                 .map(|update| {
@@ -140,10 +112,6 @@ impl cosmic::Application for AppModel {
         ])
     }
 
-    /// Handles messages emitted by the application and its widgets.
-    ///
-    /// Tasks may be returned for asynchronous execution of code in the background
-    /// on the application's async runtime.
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
         match message {
             Message::SubscriptionChannel => {
