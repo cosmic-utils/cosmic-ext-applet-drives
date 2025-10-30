@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Cosmic Ext Applet Drives
+Comment=An applet for the COSMIC desktop to manage drives
+Type=Application
+Icon=dev.cappsy.CosmicExtAppletDrives
+Exec=cosmic-ext-applet-drives %F
+Terminal=false
+StartupNotify=true
+Categories=COSMIC
+Keywords=COSMIC
+MimeType=
