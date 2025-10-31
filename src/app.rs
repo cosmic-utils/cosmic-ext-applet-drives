@@ -93,7 +93,7 @@ impl cosmic::Application for AppModel {
                                 .clone()
                                 .rsplit('/')
                                 .find(|s| !s.is_empty())
-                                .unwrap_or("No label")
+                                .unwrap_or("")
                                 .to_string();
 
                             content_list = content_list.push(row!(
@@ -115,7 +115,7 @@ impl cosmic::Application for AppModel {
 
         if empty {
             content_list = content_list.push(row!(
-                widget::text("No devices mounted"),
+                widget::text(fl!("no-devices-mounted")),
             ));
         }
 
