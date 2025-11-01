@@ -1,0 +1,46 @@
+{
+  "id": "dev.cappsy.CosmicExtAppletDrives",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "24.08",
+  "sdk": "org.freedesktop.Sdk",
+  "sdk-extensions": ["org.freedesktop.Sdk.Extension.rust-stable"],
+  "base": "com.system76.Cosmic.BaseApp",
+  "base-version": "stable",
+  "finish-args": [
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--socket=system-bus",
+    "--socket=session-bus",
+    "--talk-name=com.system76.CosmicSettingsDaemon",
+    "--talk-name=org.freedesktop.Flatpak",
+    "--filesystem=xdg-config/cosmic:rw",
+    "--share=ipc"
+  ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/rust-stable/bin",
+    "env": {
+      "CARGO_HOME": "/run/build/cosmic-ext-applet-drives/cargo"
+    }
+  },
+  "modules": [
+    {
+      "name": "cosmic-ext-applet-drives",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cargo --offline fetch --manifest-path Cargo.toml --verbose",
+        "cargo --offline build --release --features flatpak --verbose",
+        "install -Dm755 ./target/release/cosmic-ext-applet-drives -t /app/bin",
+        "install -Dm644 ./resources/app.desktop -t /app/share/applications",
+        "install -Dm644 ./resources/app.metainfo.xml -t /app/share/metainfo",
+        "install -Dm644 ./resources/icons/hicolor/scalable/apps/icon.svg -t /app/share/icons/hicolor/scalable/apps"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "./"
+        },
+        "./flatpak/cargo-sources.json"
+      ]
+    }
+  ]
+}

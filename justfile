@@ -1,25 +1,16 @@
 name := 'cosmic-ext-applet-drives'
 appid := 'dev.cappsy.CosmicExtAppletDrives'
-
 rootdir := ''
 prefix := '/usr'
-
 base-dir := absolute_path(clean(rootdir / prefix))
-
 bin-src := 'target' / 'release' / name
 bin-dst := base-dir / 'bin' / name
-
 desktop := appid + '.desktop'
-desktop-src := 'resources' / desktop
 desktop-dst := clean(rootdir / prefix) / 'share' / 'applications' / desktop
-
 appdata := appid + '.metainfo.xml'
-appdata-src := 'resources' / appdata
 appdata-dst := clean(rootdir / prefix) / 'share' / 'appdata' / appdata
-
 icons-src := 'resources' / 'icons' / 'hicolor'
 icons-dst := clean(rootdir / prefix) / 'share' / 'icons' / 'hicolor'
-
 icon-svg-src := icons-src / 'scalable' / 'apps' / 'icon.svg'
 icon-svg-dst := icons-dst / 'scalable' / 'apps' / appid + '.svg'
 
@@ -39,7 +30,7 @@ clean-dist: clean clean-vendor
 
 # Compiles with debug profile
 build-debug *args:
-    cargo build {{args}}
+    cargo build {{ args }}
 
 # Compiles with release profile
 build-release *args: (build-debug '--release' args)
@@ -49,25 +40,42 @@ build-vendored *args: vendor-extract (build-release '--frozen --offline' args)
 
 # Runs a clippy check
 check *args:
-    cargo clippy --all-features {{args}} -- -W clippy::pedantic
+    cargo clippy --all-features {{ args }} -- -W clippy::pedantic
 
 # Runs a clippy check with JSON message format
 check-json: (check '--message-format=json')
 
 # Run the application for testing purposes
 run *args:
-    env RUST_BACKTRACE=full cargo run --release {{args}}
+    env RUST_BACKTRACE=full cargo run --release {{ args }}
 
 # Installs files
 install:
-    install -Dm0755 {{bin-src}} {{bin-dst}}
-    install -Dm0644 resources/app.desktop {{desktop-dst}}
-    install -Dm0644 resources/app.metainfo.xml {{appdata-dst}}
-    install -Dm0644 {{icon-svg-src}} {{icon-svg-dst}}
+    install -Dm0755 {{ bin-src }} {{ bin-dst }}
+    install -Dm0644 resources/app.desktop {{ desktop-dst }}
+    install -Dm0644 resources/app.metainfo.xml {{ appdata-dst }}
+    install -Dm0644 {{ icon-svg-src }} {{ icon-svg-dst }}
 
 # Uninstalls installed files
 uninstall:
-    rm {{bin-dst}} {{desktop-dst}} {{icon-svg-dst}}
+    rm {{ bin-dst }} {{ desktop-dst }} {{ icon-svg-dst }}
+
+# Build flatpak locally
+flatpak-builder:
+    flatpak-builder \
+        --force-clean \
+        --verbose \
+        --ccache \
+        --user \
+        --install \
+        --install-deps-from=flathub \
+        --repo=repo \
+        flatpak-out \
+        dev.cappsy.CosmicExtAppletDrives.json
+
+# Update flatpak cargo-sources.json
+flatpak-cargo-sources:
+    python3 ./flatpak/flatpak-cargo-generator.py ./Cargo.lock -o ./flatpak/cargo-sources.json
 
 # Vendor dependencies locally
 vendor:
@@ -93,4 +101,3 @@ vendor:
 vendor-extract:
     rm -rf vendor
     tar pxf vendor.tar
-
