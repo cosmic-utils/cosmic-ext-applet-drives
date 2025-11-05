@@ -28,3 +28,7 @@ features = ["applet", "wayland"]
 
 [features]
 flatpak = []
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+similar_names = "allow"

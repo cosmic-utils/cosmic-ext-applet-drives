@@ -72,14 +72,13 @@ impl cosmic::Application for AppModel {
 
     fn view_window(&self, _id: Id) -> Element<'_, Self::Message> {
         // Build applet view
-        let devices = match get_all_devices() {
-            Ok(result) => result,
-            Err(_) => vec![],
-        };
+        let devices = get_all_devices().unwrap_or_default();
         let mut content_list = widget::column().padding(8).spacing(0);
         if devices.is_empty() {
-            content_list = content_list.push(row!(widget::button::text(fl!("no-devices-mounted"))
-                .on_press(Message::Open(String::new())),));
+            content_list = content_list.push(row!(
+                widget::button::text(fl!("no-devices-mounted"))
+                    .on_press(Message::Open(String::new())),
+            ));
         } else {
             for device in devices {
                 content_list = content_list.push(row!(
