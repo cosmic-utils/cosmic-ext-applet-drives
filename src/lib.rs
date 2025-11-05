@@ -1,7 +1,6 @@
 use notify_rust::Notification;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
 use std::process::Command;
 
 #[derive(Clone)]
@@ -54,42 +53,25 @@ pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
         let mountpoint = line_parts[1].replace("\\040", " ");
 
         // exclude /run/host/ mounts to avoid duplicates
-        if !mountpoint.starts_with("/run/host/") && !mountpoint.is_empty() {
-            if let Some(block) = device.strip_prefix("/dev/") {
-                // check that the device is removable
-                // /run/media check is a bit of a hack as some drives
-                // don't have the removable flag for some reaon
-                if is_removable(&block) || mountpoint.starts_with("/run/media/") {
-                    // break up mountpoint to get the device label
-                    let mountpoint_parts: Vec<&str> = mountpoint.split("/").collect();
-                    let label = mountpoint_parts[mountpoint_parts.len() - 1];
-                    devices.push(Device {
-                        device_type: DeviceType::USB,
-                        block: block.to_owned(),
-                        label: label.to_owned(),
-                        mountpoint: mountpoint.to_owned(),
-                        mounted: true,
-                    });
-                }
+        if let Some(block) = device.strip_prefix("/dev/") {
+            // simple and dirty check to see if the drive is removable media
+            // we want to be listing. not all are properly flagged as removable
+            // and this also removes dupes mouinted on /run/host
+            if mountpoint.starts_with("/run/media/") {
+                // break up mountpoint to get the device label
+                let mountpoint_parts: Vec<&str> = mountpoint.split("/").collect();
+                let label = mountpoint_parts[mountpoint_parts.len() - 1];
+                devices.push(Device {
+                    device_type: DeviceType::USB,
+                    block: block.to_owned(),
+                    label: label.to_owned(),
+                    mountpoint: mountpoint.to_owned(),
+                    mounted: true,
+                });
             }
         }
     }
     Ok(devices)
-}
-
-fn is_removable(block: &str) -> bool {
-    let removable_path = format!(
-        "/sys/block/{}/removable",
-        block.trim_end_matches(|c: char| c.is_ascii_digit())
-    );
-    if Path::new(&removable_path).exists() {
-        if let Ok(contents) = fs::read_to_string(&removable_path) {
-            if contents.trim() == "1" {
-                return true;
-            }
-        }
-    }
-    false
 }
 
 pub fn run_command(cmd: &str, mountpoint: &str) {
