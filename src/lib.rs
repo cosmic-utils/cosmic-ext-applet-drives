@@ -51,13 +51,15 @@ pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
         // break up line into block device and mount point
         let line_parts: Vec<&str> = line.split_whitespace().collect();
         let device = line_parts[0];
-        let mountpoint = line_parts[1];
+        let mountpoint = line_parts[1].replace("\\040", " ");
 
         // exclude /run/host/ mounts to avoid duplicates
         if !mountpoint.starts_with("/run/host/") && !mountpoint.is_empty() {
-            // check that the device is removable
             if let Some(block) = device.strip_prefix("/dev/") {
-                if is_removable(&block) {
+                // check that the device is removable
+                // /run/media check is a bit of a hack as some drives
+                // don't have the removable flag for some reaon
+                if is_removable(&block) || mountpoint.starts_with("/run/media/") {
                     // break up mountpoint to get the device label
                     let mountpoint_parts: Vec<&str> = mountpoint.split("/").collect();
                     let label = mountpoint_parts[mountpoint_parts.len() - 1];
