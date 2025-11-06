@@ -1,6 +1,5 @@
 use notify_rust::Notification;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::fs;
 use std::process::Command;
 
 #[derive(Clone)]
@@ -39,31 +38,43 @@ impl Device {
 pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
     let mut devices = vec![];
 
-    // read in all active mounts
-    let file = File::open("/proc/mounts")?;
-    for line in BufReader::new(file).lines() {
-        let Ok(line) = line else { continue };
+    // Removable / unmountable drives from /proc/mounts
+    let mounts = procfs::mounts().unwrap();
+    for mount in mounts {
+        let mount_point = mount.fs_file.replace("\\040", " ");
+        let mount_block = mount.fs_spec;
 
-        // break up line into block device and mount point
-        let line_parts: Vec<&str> = line.split_whitespace().collect();
-        let mountpoint = line_parts[1].replace("\\040", " ");
-
-        // simple and dirty check to see if the drive is removable media
-        // we want to be listing. not all are properly flagged as removable
-        // and this also removes dupes mouinted on /run/host
-        if mountpoint.starts_with("/run/media/") {
+        if is_removable(&mount_block, &mount_point) {
             // break up mountpoint to get the device label
-            let mountpoint_parts: Vec<&str> = mountpoint.split('/').collect();
+            let mountpoint_parts: Vec<&str> = mount_point.split('/').collect();
             let label = mountpoint_parts[mountpoint_parts.len() - 1];
             devices.push(Device {
                 device_type: DeviceType::USB,
                 label: label.to_owned(),
-                mountpoint: mountpoint.clone(),
+                mountpoint: mount_point.clone(),
                 mounted: true,
             });
         }
     }
     Ok(devices)
+}
+
+fn is_removable(mount_block: &str, mount_point: &str) -> bool {
+    // pass early if mounted somewhere we want to show
+    // this helps with drives that aren't flagged as removable
+    if mount_point.starts_with("/run/media/") || mount_point.starts_with("/media/") {
+        return true;
+    }
+
+    // fallback on the removable flag
+    fs::read_to_string(format!(
+        "/sys/block/{}/removable",
+        mount_block
+            .replace("/dev/", "")
+            .trim_end_matches(|c: char| c.is_ascii_digit())
+    ))
+    .map(|t| t.trim() == "1")
+    .unwrap_or(false)
 }
 
 pub fn run_command(cmd: &str, mountpoint: &str) {
