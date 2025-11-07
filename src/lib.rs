@@ -50,7 +50,7 @@ pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
             let label = mountpoint_parts[mountpoint_parts.len() - 1];
             devices.push(Device {
                 device_type: DeviceType::USB,
-                label: label.to_owned(),
+                label: get_partition_label(&mount_block).unwrap_or(label.to_owned()),
                 mountpoint: mount_point.clone(),
                 mounted: true,
             });
@@ -75,6 +75,28 @@ fn is_removable(mount_block: &str, mount_point: &str) -> bool {
     ))
     .map(|t| t.trim() == "1")
     .unwrap_or(false)
+}
+
+fn get_partition_label(mount_block: &str) -> Option<String> {
+    let output = Command::new("blkid").output();
+
+    if let Ok(output) = output {
+        if output.status.success() {
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            for line in output_str.lines() {
+                if line.starts_with(mount_block) {
+                    if let Some(label_start) = line.find("LABEL=") {
+                        let label_part = &line[label_start..];
+                        if let Some(label_end) = label_part.find(' ') {
+                            return Some(label_part[6..label_end - 1].to_owned());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }
 
 pub fn run_command(cmd: &str, mountpoint: &str) {

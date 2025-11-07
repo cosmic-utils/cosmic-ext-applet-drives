@@ -3,7 +3,7 @@
 use crate::config::Config;
 use crate::fl;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
-use cosmic::iced::{window::Id, Length, Limits, Subscription};
+use cosmic::iced::{Alignment, Limits, Subscription, window::Id};
 use cosmic::iced_widget::{column, row};
 use cosmic::iced_winit::commands::popup::{destroy_popup, get_popup};
 use cosmic::prelude::*;
@@ -75,19 +75,18 @@ impl cosmic::Application for AppModel {
         let devices = get_all_devices().unwrap_or_default();
         let mut content_list = widget::column().padding(8).spacing(0);
         if devices.is_empty() {
-            content_list = content_list.push(row!(widget::button::text(fl!("no-devices-mounted"))
-                .on_press(Message::Open(String::new())),));
+            content_list = content_list.push(row!(
+                widget::button::text(fl!("no-devices-mounted"))
+                    .on_press(Message::Open(String::new())),
+            ));
         } else {
             for device in devices {
                 content_list = content_list.push(row!(
-                    column!(widget::button::text(device.label())
-                        .on_press(Message::Open(device.mountpoint()))
-                        .width(Length::Fill))
-                    .width(Length::Fill),
-                    column!(
-                        widget::button::icon(widget::icon::from_name("media-eject-symbolic"))
-                            .on_press(Message::Unmount(device.mountpoint()))
-                    ),
+                    widget::button::text(device.label()).on_press_maybe(None),
+                    widget::button::icon(widget::icon::from_name("folder-symbolic"))
+                        .on_press(Message::Open(device.mountpoint())),
+                    widget::button::icon(widget::icon::from_name("media-eject-symbolic"))
+                        .on_press(Message::Unmount(device.mountpoint()))
                 ));
             }
         }
@@ -96,10 +95,11 @@ impl cosmic::Application for AppModel {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        Subscription::batch(vec![self
-            .core()
-            .watch_config::<Config>(Self::APP_ID)
-            .map(|update| Message::UpdateConfig(update.config))])
+        Subscription::batch(vec![
+            self.core()
+                .watch_config::<Config>(Self::APP_ID)
+                .map(|update| Message::UpdateConfig(update.config)),
+        ])
     }
 
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
