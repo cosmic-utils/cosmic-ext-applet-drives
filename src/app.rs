@@ -3,7 +3,7 @@
 use crate::config::Config;
 use crate::fl;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
-use cosmic::iced::{Alignment, Limits, Subscription, window::Id};
+use cosmic::iced::{Limits, Subscription, window::Id};
 use cosmic::iced_widget::{column, row};
 use cosmic::iced_winit::commands::popup::{destroy_popup, get_popup};
 use cosmic::prelude::*;
@@ -82,11 +82,14 @@ impl cosmic::Application for AppModel {
         } else {
             for device in devices {
                 content_list = content_list.push(row!(
-                    widget::button::text(device.label()).on_press_maybe(None),
-                    widget::button::icon(widget::icon::from_name("folder-symbolic"))
-                        .on_press(Message::Open(device.mountpoint())),
-                    widget::button::icon(widget::icon::from_name("media-eject-symbolic"))
-                        .on_press(Message::Unmount(device.mountpoint()))
+                    column!(
+                        widget::button::text(device.label())
+                            .on_press(Message::Open(device.mountpoint()))
+                    ),
+                    column!(
+                        widget::button::icon(widget::icon::from_name("media-eject-symbolic"))
+                            .on_press(Message::Unmount(device.mountpoint()))
+                    )
                 ));
             }
         }
