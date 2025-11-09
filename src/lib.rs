@@ -6,7 +6,7 @@ use std::process::Command;
 pub enum DeviceType {
     USB,
     Disk,
-    _Network,
+    Network,
 }
 
 #[derive(Clone)]
@@ -15,7 +15,6 @@ pub struct Device {
     label: String,
     mountpoint: String,
 }
-
 impl Device {
     #[must_use]
     pub fn device_type(&self) -> DeviceType {
@@ -41,17 +40,62 @@ pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
         let mount_block = mount.fs_spec;
 
         if is_removable(&mount_block, &mount_point) {
-            // break up mountpoint to get the device label
-            let mountpoint_parts: Vec<&str> = mount_point.split('/').collect();
-            let label = mountpoint_parts[mountpoint_parts.len() - 1];
+            let device_info = device_info(&mount_block);
             devices.push(Device {
-                device_type: DeviceType::USB,
-                label: label.to_owned(),
+                device_type: if device_info.bus == Some(String::from("usb")) {
+                    DeviceType::USB
+                } else {
+                    DeviceType::Disk
+                },
+                label: match device_info.label {
+                    Some(label) => label,
+                    None => {
+                        // break up mountpoint to get fallback device label
+                        let mountpoint_parts: Vec<&str> = mount_point.split('/').collect();
+                        mountpoint_parts[mountpoint_parts.len() - 1].to_owned()
+                    }
+                },
                 mountpoint: mount_point.clone(),
             });
         }
     }
     Ok(devices)
+}
+
+// Get whatever extra information is useful from udev
+#[derive(Debug)]
+struct DeviceInfo {
+    fs: Option<String>,
+    bus: Option<String>,
+    label: Option<String>,
+}
+
+fn device_info(mount_block: &str) -> DeviceInfo {
+    udev::Enumerator::new()
+        .and_then(|mut e| {
+            let device_name = mount_block.strip_prefix("/dev/").unwrap_or(mount_block);
+            e.match_sysname(device_name)?;
+            let devices: Vec<_> = e.scan_devices()?.collect();
+            Ok(devices)
+        })
+        .ok()
+        .and_then(|devices| devices.into_iter().next())
+        .map(|dev| DeviceInfo {
+            fs: dev
+                .property_value("ID_FS_TYPE")
+                .map(|v| v.to_string_lossy().to_string()),
+            bus: dev
+                .property_value("ID_BUS")
+                .map(|v| v.to_string_lossy().to_string()),
+            label: dev
+                .property_value("ID_FS_LABEL")
+                .map(|v| v.to_string_lossy().to_string()),
+        })
+        .unwrap_or_else(|| DeviceInfo {
+            fs: None,
+            bus: None,
+            label: None,
+        })
 }
 
 fn is_removable(mount_block: &str, mount_point: &str) -> bool {

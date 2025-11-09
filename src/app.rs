@@ -2,7 +2,6 @@
 
 use crate::config::Config;
 use crate::fl;
-use cosmic::applet::padded_control;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::Length;
 use cosmic::iced::{Limits, Subscription, window::Id};
@@ -10,7 +9,7 @@ use cosmic::iced_widget::{column, row};
 use cosmic::iced_winit::commands::popup::{destroy_popup, get_popup};
 use cosmic::prelude::*;
 use cosmic::widget;
-use cosmic_ext_applet_drives::{get_all_devices, run_command};
+use cosmic_ext_applet_drives::{DeviceType, get_all_devices, run_command};
 
 #[derive(Default)]
 pub struct AppModel {
@@ -84,10 +83,17 @@ impl cosmic::Application for AppModel {
         } else {
             for device in devices {
                 content_list = content_list.push(row!(
+                    column!(widget::icon::from_name(match device.device_type() {
+                        DeviceType::USB => "drive-harddisk-usb-symbolic",
+                        DeviceType::Disk => "disks-symbolic",
+                        DeviceType::Network => "network-workgroup-symbolic",
+                    }))
+                    .padding([7, 5]),
                     column!(
                         widget::button::text(device.label())
                             .on_press(Message::Open(device.mountpoint()))
-                            .width(Length::Fill),
+                            .width(Length::Fill)
+                            .padding(5),
                     )
                     .width(Length::Fill),
                     column!(
