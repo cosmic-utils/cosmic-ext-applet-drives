@@ -10,7 +10,7 @@ This is in very early stages but is functional as it stands.
 - Click the drive to open the mount in COSMIC Files
 - Click the unmount button to unmount the drive before removable
   
-### What we want
+### Possible future additions
 
 - Network mounts
 - Possibly notifications for unmounting, errors, and a bossy warning about removing a drive before unmounting (with the option to disable, of course)
