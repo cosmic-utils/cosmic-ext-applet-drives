@@ -1,4 +1,4 @@
-# COSMIC™ Drives Applet
+Removable Drives Applet (for the COSMIC™ Desktop)
 
 An applet for the COSMIC™ desktop to manage your drives.
 
