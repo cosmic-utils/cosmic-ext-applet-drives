@@ -3,20 +3,31 @@
   <id>dev.cappsy.CosmicExtAppletDrives</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
+  <project_group>COSMIC</project_group>
+  <developer id="dev.cappsy">
+    <name>Jonathan Capps</name>
+  </developer>
+  <developer_name>Jonathan Capps</developer_name>
+  <update_contact>hello@cappsy.dev</update_contact>
+  <url type="homepage">
+    https://github.com/cosmic-utils/cosmic-ext-applet-drives
+  </url>
+  <url type="bugtracker">
+    https://github.com/cosmic-utils/cosmic-ext-applet-drives/issues
+  </url>
+  <url type="contribute">
+    https://github.com/cosmic-utils/cosmic-ext-applet-drives
+  </url>
   <name>Drives</name>
   <summary>An applet for the COSMIC desktop to manage mounted drives</summary>
   <icon type="remote" width="64" height="64" scale="1">
-    https://github.com/cappsyco/cosmic-ext-applet-drives/raw/main/resources/icons/hicolor/scalable/apps/icon.svg
+    https://github.com/cosmic-utils/cosmic-ext-applet-drives/raw/main/resources/icons/hicolor/scalable/apps/icon.svg
   </icon>
-  <url
-        type="vcs-browser"
-    >https://github.com/cappsyco/cosmic-ext-applet-drives</url>
+  <url type="vcs-browser">https://github.com/cosmic-utils/cosmic-ext-applet-drives</url>
   <description>
-    <p>For all your applet needs!</p>
+    <p>Manage, access and unmount your removable drives from a simple applet.</p>
   </description>
-  <launchable
-        type="desktop-id"
-    >dev.cappsy.CosmicExtAppletDrives.desktop</launchable>
+  <launchable type="desktop-id">dev.cappsy.CosmicExtAppletDrives.desktop</launchable>
   <provides>
     <binaries>
       <binary>cosmic-ext-applet-drives</binary>
@@ -32,9 +43,25 @@
   </supports>
   <categories>
     <category>COSMIC</category>
+    <category>Utility</category>
   </categories>
   <keywords>
     <keyword>COSMIC</keyword>
   </keywords>
+  <releases>
+    <release version="0.0.1" date="2026-02-05">
+      <url type="details">
+        https://github.com/cosmic-utils/cosmic-ext-applet-drives/releases/tag/v0.1.0
+      </url>
+      <description>
+        <p><strong>0.1.0</strong></p>
+        <ul>
+          <li>List of all mounted drives (removable USB and internal drives mounted by the user)</li>
+          <li>Click the drive to open the mount in COSMIC Files</li>
+          <li>Click the unmount button to unmount the drive</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
   <content_rating type="oars-1.1" />
 </component>
