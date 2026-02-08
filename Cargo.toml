@@ -13,7 +13,7 @@ lfs-core = "0.19.2"
 notify-rust = "4.12.0"
 open = "5.3.3"
 procfs = "0.18.0"
-rust-embed = "8.9.0"
+rust-embed = "8.11.0"
 udev = "0.9.3"
 
 [dependencies.i18n-embed]
