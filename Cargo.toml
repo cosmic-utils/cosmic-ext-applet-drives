@@ -1,6 +1,6 @@
 [package]
 name = "cosmic-ext-applet-drives"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "An applet for the COSMIC desktop to manage mounted drives"
