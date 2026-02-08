@@ -39,7 +39,7 @@ cd cosmic-ext-applet-drives-git && makepkg -si
 You're going to need to make sure you have the ability to compile Rust binaries, along with `git` and `just`
 
 ```sh
-git clone https://github.com/cappsyco/cosmic-ext-applet-drives && cd cosmic-ext-applet-drives
+git clone https://github.com/cosmic-utils/cosmic-ext-applet-drives && cd cosmic-ext-applet-drives
 just build-release
 sudo just install
 ```
