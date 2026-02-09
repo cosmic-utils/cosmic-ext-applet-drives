@@ -29,9 +29,7 @@
   </description>
   <launchable type="desktop-id">dev.cappsy.CosmicExtAppletDrives.desktop</launchable>
   <provides>
-    <binaries>
-      <binary>cosmic-ext-applet-drives</binary>
-    </binaries>
+    <id>com.system76.CosmicApplet</id>
   </provides>
   <requires>
     <display_length compare="ge">360</display_length>
@@ -54,7 +52,7 @@
         https://github.com/cosmic-utils/cosmic-ext-applet-drives/releases/tag/v0.1.0
       </url>
       <description>
-        <p><strong>0.1.0</strong></p>
+        <p>0.1.0</p>
         <ul>
           <li>List of all mounted drives (removable USB and internal drives mounted by the user)</li>
           <li>Click the drive to open the mount in COSMIC Files</li>
