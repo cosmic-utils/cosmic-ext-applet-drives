@@ -47,12 +47,12 @@
     <keyword>COSMIC</keyword>
   </keywords>
   <releases>
-    <release version="0.0.1" date="2026-02-05">
+    <release version="0.1.1" date="2026-02-14">
       <url type="details">
-        https://github.com/cosmic-utils/cosmic-ext-applet-drives/releases/tag/v0.1.0
+        https://github.com/cosmic-utils/cosmic-ext-applet-drives/releases/tag/v0.1.1
       </url>
       <description>
-        <p>0.1.0</p>
+        <p>0.1.1</p>
         <ul>
           <li>List of all mounted drives (removable USB and internal drives mounted by the user)</li>
           <li>Click the drive to open the mount in COSMIC Files</li>
