@@ -2,20 +2,26 @@
 
 use crate::config::Config;
 use crate::fl;
+use crate::monitor::DriveMonitor;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::Length;
-use cosmic::iced::{Limits, Subscription, window::Id};
+use cosmic::iced::futures::SinkExt;
+use cosmic::iced::{Limits, Subscription, stream, window::Id};
 use cosmic::iced_widget::{column, row};
 use cosmic::iced_winit::commands::popup::{destroy_popup, get_popup};
 use cosmic::prelude::*;
 use cosmic::widget;
-use cosmic_ext_applet_drives::{DeviceType, get_all_devices, run_command};
+use cosmic_ext_applet_drives::{AppletMount, AppletMountType, get_all_devices, run_command};
+use gio::VolumeMonitor;
+use std::any::TypeId;
+use std::future::pending;
 
-#[derive(Default)]
 pub struct AppModel {
     core: cosmic::Core,
     popup: Option<Id>,
     config: Config,
+    appletmounts: Vec<AppletMount>,
+    monitor: DriveMonitor,
 }
 
 #[derive(Debug, Clone)]
@@ -23,8 +29,9 @@ pub enum Message {
     TogglePopup,
     PopupClosed(Id),
     UpdateConfig(Config),
-    Unmount(String),
+    Unmount(usize),
     Open(String),
+    RefreshMounts,
 }
 
 impl cosmic::Application for AppModel {
@@ -53,7 +60,9 @@ impl cosmic::Application for AppModel {
                     Err((_errors, config)) => config,
                 })
                 .unwrap_or_default(),
-            ..Default::default()
+            appletmounts: get_all_devices().unwrap_or_default(),
+            monitor: DriveMonitor::new(),
+            popup: None,
         };
 
         (app, Task::none())
@@ -72,35 +81,34 @@ impl cosmic::Application for AppModel {
     }
 
     fn view_window(&self, _id: Id) -> Element<'_, Self::Message> {
-        // Build applet view
-        let devices = get_all_devices().unwrap_or_default();
         let mut content_list = widget::column().padding(8).spacing(0);
-        if devices.is_empty() {
+        if self.appletmounts.is_empty() {
             content_list = content_list.push(row!(
                 widget::button::text(fl!("no-devices-mounted"))
                     .on_press(Message::Open(String::new())),
             ));
         } else {
-            for device in devices {
+            let mut mount_i = 0;
+            for device in &self.appletmounts {
                 content_list = content_list.push(row!(
                     column!(widget::icon::from_name(match device.device_type() {
-                        DeviceType::USB => "drive-harddisk-usb-symbolic",
-                        DeviceType::Disk => "disks-symbolic",
-                        DeviceType::Network => "network-workgroup-symbolic",
+                        AppletMountType::USB => "drive-harddisk-usb-symbolic",
+                        AppletMountType::Network => "network-workgroup-symbolic",
                     }))
                     .padding([7, 5]),
                     column!(
                         widget::button::text(device.label())
-                            .on_press(Message::Open(device.mountpoint()))
+                            .on_press(Message::Open(device.path()))
                             .width(Length::Fill)
                             .padding(5),
                     )
                     .width(Length::Fill),
                     column!(
                         widget::button::icon(widget::icon::from_name("media-eject-symbolic"))
-                            .on_press(Message::Unmount(device.mountpoint()))
+                            .on_press(Message::Unmount(mount_i))
                     )
                 ));
+                mount_i += 1;
             }
         }
 
@@ -108,10 +116,21 @@ impl cosmic::Application for AppModel {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
+        let event_rx = self.monitor.event_rx.clone();
         Subscription::batch(vec![
             self.core()
                 .watch_config::<Config>(Self::APP_ID)
                 .map(|update| Message::UpdateConfig(update.config)),
+            Subscription::run_with_id(
+                TypeId::of::<VolumeMonitor>(),
+                stream::channel(1, |mut output| async move {
+                    while let Some(()) = event_rx.lock().await.recv().await {
+                        let _ = output.send(Message::RefreshMounts).await;
+                    }
+                    pending::<()>().await;
+                    unreachable!()
+                }),
+            ),
         ])
     }
 
@@ -120,14 +139,14 @@ impl cosmic::Application for AppModel {
             Message::UpdateConfig(config) => {
                 self.config = config;
             }
-            Message::Unmount(mountpoint) => {
-                // TODO: Unmounting is at its most basic right now.
-                // This could be expanded to be more robust
-                run_command("umount", &mountpoint);
+            Message::Unmount(idx) => {
+                self.monitor.unmount(idx);
             }
             Message::Open(mountpoint) => {
-                // TODO: Launch the default file browser
                 run_command("cosmic-files", &mountpoint);
+            }
+            Message::RefreshMounts => {
+                self.appletmounts = get_all_devices().unwrap_or_default();
             }
             Message::TogglePopup => {
                 return if let Some(p) = self.popup.take() {

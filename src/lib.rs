@@ -1,36 +1,80 @@
+use gio::prelude::*;
 use notify_rust::Notification;
 use std::fs;
 use std::process::Command;
 
-#[derive(Clone)]
-pub enum DeviceType {
+#[derive(Clone, Debug)]
+pub enum AppletMountType {
     USB,
-    Disk,
     Network,
 }
 
-#[derive(Clone)]
-pub struct Device {
-    device_type: DeviceType,
-    label: String,
-    mountpoint: String,
+#[derive(Clone, Debug)]
+pub struct AppletMount {
+    pub mount: gio::Mount,
+    pub mount_type: AppletMountType,
+    pub label: String,
+    pub path: String,
 }
-impl Device {
+impl AppletMount {
     #[must_use]
-    pub fn device_type(&self) -> DeviceType {
-        self.device_type.clone()
+    pub fn device_type(&self) -> AppletMountType {
+        self.mount_type.clone()
     }
     #[must_use]
     pub fn label(&self) -> String {
         self.label.clone()
     }
     #[must_use]
-    pub fn mountpoint(&self) -> String {
-        self.mountpoint.clone()
+    pub fn path(&self) -> String {
+        self.path.clone()
     }
 }
 
-pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
+pub fn get_all_devices() -> std::io::Result<Vec<AppletMount>> {
+    let mut allmounts = vec![];
+
+    let monitor = gio::VolumeMonitor::get();
+    let mounts = monitor.mounts();
+    let non_shadowed: Vec<_> = mounts.iter().filter(|m| !m.is_shadowed()).collect();
+
+    for mount in non_shadowed {
+        // Check if is a removable USB drive
+        let is_removable = match mount.drive() {
+            Some(drive) => drive.is_removable(),
+            None => false,
+        };
+
+        // Check for remote drive
+        let root = MountExt::root(mount);
+        let is_remote = root
+            .query_filesystem_info(
+                gio::FILE_ATTRIBUTE_FILESYSTEM_REMOTE,
+                gio::Cancellable::NONE,
+            )
+            .ok()
+            .map(|info| info.boolean(gio::FILE_ATTRIBUTE_FILESYSTEM_REMOTE))
+            .unwrap_or(true);
+
+        //if is_removable || is_remote {
+        allmounts.push(AppletMount {
+            mount: mount.clone(),
+            mount_type: if is_remote {
+                AppletMountType::Network
+            } else {
+                AppletMountType::USB
+            },
+            label: mount.name().into(),
+            path: mount.root().uri().into(),
+        });
+        //}
+    }
+
+    Ok(allmounts)
+}
+
+/*
+pub fn get_all_devices() -> std::io::Result<Vec<AppletMount>> {
     let mut devices = vec![];
 
     // Removable / unmountable drives from /proc/mounts
@@ -41,11 +85,11 @@ pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
 
         if is_removable(&mount_block, &mount_point) {
             let device_info = device_info(&mount_block);
-            devices.push(Device {
-                device_type: if device_info.bus == Some(String::from("usb")) {
-                    DeviceType::USB
+            devices.push(AppletMount {
+                mount_type: if device_info.bus == Some(String::from("usb")) {
+                    AppletMountType::USB
                 } else {
-                    DeviceType::Disk
+                    AppletMountType::Disk
                 },
                 label: match device_info.label {
                     Some(label) => label,
@@ -55,12 +99,13 @@ pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
                         mountpoint_parts[mountpoint_parts.len() - 1].to_owned()
                     }
                 },
-                mountpoint: mount_point.clone(),
+                path: mount_point.clone(),
             });
         }
     }
     Ok(devices)
 }
+*/
 
 // Get whatever extra information is useful from udev
 #[derive(Debug)]
