@@ -8,7 +8,7 @@ repository = "https://github.com/cosmic-utils/cosmic-ext-applet-drives"
 
 [dependencies]
 drives = "0.6.1"
-gio = "0.21.5"
+gio = "0.22.1"
 i18n-embed-fl = "0.10.0"
 lfs-core = "0.19.2"
 notify-rust = "4.12.0"

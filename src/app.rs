@@ -30,7 +30,7 @@ pub enum Message {
     PopupClosed(Id),
     UpdateConfig(Config),
     Unmount(usize),
-    Open(String),
+    Open(Option<String>),
     RefreshMounts,
 }
 
@@ -84,31 +84,28 @@ impl cosmic::Application for AppModel {
         let mut content_list = widget::column().padding(8).spacing(0);
         if self.appletmounts.is_empty() {
             content_list = content_list.push(row!(
-                widget::button::text(fl!("no-devices-mounted"))
-                    .on_press(Message::Open(String::new())),
+                widget::button::text(fl!("no-devices-mounted")).on_press(Message::Open(None)),
             ));
         } else {
-            let mut mount_i = 0;
-            for device in &self.appletmounts {
+            for entry in &self.appletmounts {
                 content_list = content_list.push(row!(
-                    column!(widget::icon::from_name(match device.device_type() {
+                    column!(widget::icon::from_name(match entry.device_type() {
                         AppletMountType::USB => "drive-harddisk-usb-symbolic",
                         AppletMountType::Network => "network-workgroup-symbolic",
                     }))
                     .padding([7, 5]),
                     column!(
-                        widget::button::text(device.label())
-                            .on_press(Message::Open(device.path()))
+                        widget::button::text(entry.label())
+                            .on_press(Message::Open(entry.path()))
                             .width(Length::Fill)
                             .padding(5),
                     )
                     .width(Length::Fill),
                     column!(
                         widget::button::icon(widget::icon::from_name("media-eject-symbolic"))
-                            .on_press(Message::Unmount(mount_i))
+                            .on_press(Message::Unmount(entry.idx()))
                     )
                 ));
-                mount_i += 1;
             }
         }
 
@@ -143,7 +140,7 @@ impl cosmic::Application for AppModel {
                 self.monitor.unmount(idx);
             }
             Message::Open(mountpoint) => {
-                run_command("cosmic-files", &mountpoint);
+                run_command("cosmic-files", &mountpoint.unwrap_or_default());
             }
             Message::RefreshMounts => {
                 self.appletmounts = get_all_devices().unwrap_or_default();
