@@ -1,6 +1,6 @@
 [package]
 name = "cosmic-ext-applet-drives"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "An applet for the COSMIC desktop to manage mounted drives"
@@ -8,12 +8,12 @@ repository = "https://github.com/cosmic-utils/cosmic-ext-applet-drives"
 
 [dependencies]
 drives = "0.6.1"
-i18n-embed-fl = "0.10.0"
-lfs-core = "0.19.2"
-notify-rust = "4.12.0"
-open = "5.3.3"
+i18n-embed-fl = "0.10.1"
+lfs-core = "0.19.3"
+notify-rust = "4.18.0"
+open = "5.4.0"
 procfs = "0.18.0"
-rust-embed = "8.11.0"
+rust-embed = "8.12.0"
 udev = "0.9.3"
 
 [dependencies.i18n-embed]

@@ -65,7 +65,6 @@ pub fn get_all_devices() -> std::io::Result<Vec<Device>> {
 // Get whatever extra information is useful from udev
 #[derive(Debug)]
 struct DeviceInfo {
-    fs: Option<String>,
     bus: Option<String>,
     label: Option<String>,
 }
@@ -81,9 +80,6 @@ fn device_info(mount_block: &str) -> DeviceInfo {
         .ok()
         .and_then(|devices| devices.into_iter().next())
         .map(|dev| DeviceInfo {
-            fs: dev
-                .property_value("ID_FS_TYPE")
-                .map(|v| v.to_string_lossy().to_string()),
             bus: dev
                 .property_value("ID_BUS")
                 .map(|v| v.to_string_lossy().to_string()),
@@ -92,7 +88,6 @@ fn device_info(mount_block: &str) -> DeviceInfo {
                 .map(|v| v.to_string_lossy().to_string()),
         })
         .unwrap_or_else(|| DeviceInfo {
-            fs: None,
             bus: None,
             label: None,
         })
