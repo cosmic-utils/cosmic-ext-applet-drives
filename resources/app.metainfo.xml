@@ -55,11 +55,9 @@
         https://github.com/cosmic-utils/cosmic-ext-applet-drives/releases/tag/v0.1.1
       </url>
       <description>
-        <p>0.1.1</p>
+        <p>0.1.2</p>
         <ul>
-          <li>List of all mounted drives (removable USB and internal drives mounted by the user)</li>
-          <li>Click the drive to open the mount in COSMIC Files</li>
-          <li>Click the unmount button to unmount the drive</li>
+            <li>Fixing crashing issue due to the applet using an outdated libcosmic</li>
         </ul>
       </description>
     </release>

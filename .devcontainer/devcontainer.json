@@ -1,14 +1,13 @@
 {
   "name": "COSMIC Rust",
   "build": {
-    "dockerfile": "Containerfile"	  
+    "dockerfile": "Containerfile"
   },
-  "remoteUser": "cosmicdev",
+  "remoteUser": "vscode",
   "postCreateCommand": "rustc --version && cargo --version",
   "containerEnv": {
     "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
-    "XDG_RUNTIME_DIR": "/run/user/1000",
-    "DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1000/bus"
+    "XDG_RUNTIME_DIR": "/run/user/1000"
   },
   "mounts": [
     "source=${localEnv:XDG_RUNTIME_DIR},target=/run/user/1000,type=bind,consistency=cached"

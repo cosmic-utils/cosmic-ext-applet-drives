@@ -1,51 +1,28 @@
-# Official Rust image
-FROM rust:trixie
+FROM mcr.microsoft.com/devcontainers/rust:1-trixie
 
-# Avoid warnings by switching to noninteractive
-ENV DEBIAN_FRONTEND=noninteractive
+# Write DBUS env to bashrc so it's available at runtime
+RUN echo 'export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus' >> /etc/bash.bashrc
 
-# Setup user
-ARG USERNAME=cosmicdev
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-RUN groupadd --gid $USER_GID $USERNAME \
-&& useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME \
-&& apt-get update \
-&& apt-get install -y sudo \
-&& echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-&& chmod 0440 /etc/sudoers.d/$USERNAME
-
-# Basic tools
+# COSMIC/iced dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-vim \
-git \
-just
-
-# COSMIC/iced dependencies and drivers
-RUN apt-get install -y --no-install-recommends \
-pkg-config \
-libssl-dev \
-libxkbcommon-dev \
-libwayland-dev \
-libegl1-mesa-dev \
-wayland-protocols
-
-# Cleanup
-RUN apt-get clean \
-&& rm -rf /var/lib/apt/lists/*
+    pkg-config \
+    libssl-dev \
+    libxkbcommon-dev \
+    libwayland-dev \
+    libegl1-mesa-dev \
+    wayland-protocols \
+    just \
+    python3-aiohttp \
+    python3-toml \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install COSMIC icons
 RUN git clone https://github.com/pop-os/cosmic-icons \
-&& cd cosmic-icons \
-&& just install \
-&& cd .. && rm -R cosmic-icons
+    && cd cosmic-icons \
+    && just install \
+    && cd .. && rm -rf cosmic-icons
 
-# Switch back to dialog for any ad-hoc use of apt-get
-ENV DEBIAN_FRONTEND=dialog
-
-# Set the default user
-USER $USERNAME
-
-# Install Rust components
+# Switch to vscode user for Rust component installation
+USER vscode
 RUN rustup component add rustfmt clippy
-
