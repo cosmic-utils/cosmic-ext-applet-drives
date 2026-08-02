@@ -5,10 +5,9 @@ use crate::fl;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::Length;
 use cosmic::iced::{Limits, Subscription, window::Id};
-use cosmic::iced::platform_specific::shell::commands::popup::{destroy_popup, get_popup};
-use cosmic::widget::{column, row};
 use cosmic::prelude::*;
 use cosmic::widget;
+use cosmic::widget::{column, row};
 use cosmic_ext_applet_drives::{DeviceType, get_all_devices, run_command};
 
 #[derive(Default)]
@@ -131,23 +130,29 @@ impl cosmic::Application for AppModel {
             }
             Message::TogglePopup => {
                 return if let Some(p) = self.popup.take() {
-                    destroy_popup(p)
+                    cosmic::surface::surface_task(cosmic::surface::action::destroy_popup(p))
                 } else {
-                    let new_id = Id::unique();
-                    self.popup.replace(new_id);
-                    let mut popup_settings = self.core.applet.get_popup_settings(
-                        self.core.main_window_id().unwrap(),
-                        new_id,
+                    cosmic::surface::surface_task(cosmic::surface::action::app_popup(
+                        |_| Default::default(),
+                        |app: &mut AppModel| {
+                            let new_id = Id::unique();
+                            app.popup.replace(new_id);
+                            let mut popup_settings = app.core.applet.get_popup_settings(
+                                app.core.main_window_id().unwrap(),
+                                new_id,
+                                None,
+                                None,
+                                None,
+                            );
+                            popup_settings.positioner.size_limits = Limits::NONE
+                                .max_width(372.0)
+                                .min_width(300.0)
+                                .min_height(200.0)
+                                .max_height(1080.0);
+                            popup_settings
+                        },
                         None,
-                        None,
-                        None,
-                    );
-                    popup_settings.positioner.size_limits = Limits::NONE
-                        .max_width(372.0)
-                        .min_width(300.0)
-                        .min_height(200.0)
-                        .max_height(1080.0);
-                    get_popup(popup_settings)
+                    ))
                 };
             }
             Message::PopupClosed(id) => {
