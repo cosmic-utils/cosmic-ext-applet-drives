@@ -76,8 +76,12 @@ impl cosmic::Application for AppModel {
         let mut content_list = widget::column(vec![]).padding(8).spacing(0);
         if devices.is_empty() {
             content_list = content_list.push(row!(
-                widget::button::text(fl!("no-devices-mounted"))
-                    .on_press(Message::Open(String::new())),
+                column!(
+                    widget::button::text(fl!("no-devices-mounted"))
+                        .on_press(Message::Open(String::new()))
+                        .width(Length::Fill),
+                )
+                .width(Length::Fill)
             ));
         } else {
             for device in devices {
