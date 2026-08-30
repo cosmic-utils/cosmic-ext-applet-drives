@@ -79,7 +79,6 @@ impl cosmic::Application for AppModel {
                 column!(
                     widget::button::text(fl!("no-devices-mounted"))
                         .on_press(Message::Open(String::new()))
-                        .width(Length::Fill),
                 )
                 .width(Length::Fill)
             ));
