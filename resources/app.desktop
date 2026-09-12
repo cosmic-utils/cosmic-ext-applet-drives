@@ -1,6 +1,7 @@
 [Desktop Entry]
 Name=Drives
 Name[cs]=Disky
+Name[pl]=Dyski
 Exec=cosmic-ext-applet-drives
 Terminal=false
 Type=Application
@@ -9,6 +10,7 @@ NotShowIn=COSMIC
 Icon=dev.cappsy.CosmicExtAppletDrives-symbolic
 Categories=COSMIC;Utility;
 Keywords=Folder;Manager;
+Keywords[pl]=Folder;Katalog;Menadżer;
 MimeType=inode/directory;
 NoDisplay=true
 X-CosmicApplet=true
