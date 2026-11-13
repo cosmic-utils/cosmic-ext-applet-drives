@@ -43,7 +43,7 @@ pub fn get_all_devices() -> std::io::Result<Vec<AppletMount>> {
     let mounts = monitor.mounts();
     let non_shadowed: Vec<_> = mounts.iter().filter(|m| !m.is_shadowed()).collect();
 
-    for (idx,mount) in non_shadowed.into_iter().enumerate() {
+    for (idx, mount) in non_shadowed.into_iter().enumerate() {
         // Check if is a removable USB drive
         let is_removable = match mount.drive() {
             Some(drive) => drive.is_removable(),

@@ -7,14 +7,25 @@ use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::Length;
 use cosmic::iced::futures::SinkExt;
 use cosmic::iced::{Limits, Subscription, stream, window::Id};
-use cosmic::iced_widget::{column, row};
-use cosmic::iced_winit::commands::popup::{destroy_popup, get_popup};
 use cosmic::prelude::*;
 use cosmic::widget;
+use cosmic::widget::{column, row};
 use cosmic_ext_applet_drives::{AppletMount, AppletMountType, get_all_devices, run_command};
 use gio::VolumeMonitor;
 use std::any::TypeId;
 use std::future::pending;
+use std::hash::{Hash, Hasher};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+#[derive(Clone)]
+struct EventReceiver(Arc<Mutex<tokio::sync::mpsc::UnboundedReceiver<()>>>);
+
+impl Hash for EventReceiver {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        TypeId::of::<VolumeMonitor>().hash(state);
+    }
+}
 
 pub struct AppModel {
     core: cosmic::Core,
@@ -81,10 +92,13 @@ impl cosmic::Application for AppModel {
     }
 
     fn view_window(&self, _id: Id) -> Element<'_, Self::Message> {
-        let mut content_list = widget::column().padding(8).spacing(0);
+        let mut content_list = widget::column(vec![]).padding(8).spacing(0);
         if self.appletmounts.is_empty() {
             content_list = content_list.push(row!(
-                widget::button::text(fl!("no-devices-mounted")).on_press(Message::Open(None)),
+                column!(
+                    widget::button::text(fl!("no-devices-mounted")).on_press(Message::Open(None))
+                )
+                .width(Length::Fill)
             ));
         } else {
             for entry in &self.appletmounts {
@@ -113,21 +127,24 @@ impl cosmic::Application for AppModel {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        let event_rx = self.monitor.event_rx.clone();
+        let event_rx = EventReceiver(self.monitor.event_rx.clone());
         Subscription::batch(vec![
             self.core()
                 .watch_config::<Config>(Self::APP_ID)
                 .map(|update| Message::UpdateConfig(update.config)),
-            Subscription::run_with_id(
-                TypeId::of::<VolumeMonitor>(),
-                stream::channel(1, |mut output| async move {
-                    while let Some(()) = event_rx.lock().await.recv().await {
-                        let _ = output.send(Message::RefreshMounts).await;
-                    }
-                    pending::<()>().await;
-                    unreachable!()
-                }),
-            ),
+            Subscription::run_with(event_rx, |event_rx| {
+                let event_rx = event_rx.clone();
+                stream::channel(
+                    1,
+                    |mut output: cosmic::iced::futures::channel::mpsc::Sender<Message>| async move {
+                        while let Some(()) = event_rx.0.lock().await.recv().await {
+                            let _ = output.send(Message::RefreshMounts).await;
+                        }
+                        pending::<()>().await;
+                        unreachable!()
+                    },
+                )
+            }),
         ])
     }
 
@@ -147,23 +164,29 @@ impl cosmic::Application for AppModel {
             }
             Message::TogglePopup => {
                 return if let Some(p) = self.popup.take() {
-                    destroy_popup(p)
+                    cosmic::surface::surface_task(cosmic::surface::action::destroy_popup(p))
                 } else {
-                    let new_id = Id::unique();
-                    self.popup.replace(new_id);
-                    let mut popup_settings = self.core.applet.get_popup_settings(
-                        self.core.main_window_id().unwrap(),
-                        new_id,
+                    cosmic::surface::surface_task(cosmic::surface::action::app_popup(
+                        |_| Default::default(),
+                        |app: &mut AppModel| {
+                            let new_id = Id::unique();
+                            app.popup.replace(new_id);
+                            let mut popup_settings = app.core.applet.get_popup_settings(
+                                app.core.main_window_id().unwrap(),
+                                new_id,
+                                None,
+                                None,
+                                None,
+                            );
+                            popup_settings.positioner.size_limits = Limits::NONE
+                                .max_width(372.0)
+                                .min_width(300.0)
+                                .min_height(200.0)
+                                .max_height(1080.0);
+                            popup_settings
+                        },
                         None,
-                        None,
-                        None,
-                    );
-                    popup_settings.positioner.size_limits = Limits::NONE
-                        .max_width(372.0)
-                        .min_width(300.0)
-                        .min_height(200.0)
-                        .max_height(1080.0);
-                    get_popup(popup_settings)
+                    ))
                 };
             }
             Message::PopupClosed(id) => {
@@ -175,7 +198,7 @@ impl cosmic::Application for AppModel {
         Task::none()
     }
 
-    fn style(&self) -> Option<cosmic::iced_runtime::Appearance> {
+    fn style(&self) -> Option<cosmic::iced::theme::Style> {
         Some(cosmic::applet::style())
     }
 }

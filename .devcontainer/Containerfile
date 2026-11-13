@@ -1,0 +1,28 @@
+FROM mcr.microsoft.com/devcontainers/rust:1-trixie
+
+# Write DBUS env to bashrc so it's available at runtime
+RUN echo 'export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus' >> /etc/bash.bashrc
+
+# COSMIC/iced dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    libxkbcommon-dev \
+    libwayland-dev \
+    libegl1-mesa-dev \
+    wayland-protocols \
+    just \
+    python3-aiohttp \
+    python3-toml \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install COSMIC icons
+RUN git clone https://github.com/pop-os/cosmic-icons \
+    && cd cosmic-icons \
+    && just install \
+    && cd .. && rm -rf cosmic-icons
+
+# Switch to vscode user for Rust component installation
+USER vscode
+RUN rustup component add rustfmt clippy
